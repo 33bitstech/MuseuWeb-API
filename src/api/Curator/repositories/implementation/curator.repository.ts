@@ -19,8 +19,8 @@ export class CuratorRepository implements ICuratorRepository{
         const curator = await this.curatorModel.findOne({curatorId}).lean()
         return curator
     }
-    public findByEmail = async (email: string) => {
-        const curator = await this.curatorModel.findOne({email}).lean()
+    public findByName = async (name: string, museumId: string) => {
+        const curator = await this.curatorModel.findOne({name, museumId}).lean()
         return curator
     }
     public findAllByMuseumId = async (museumId: string) => {
@@ -34,14 +34,6 @@ export class CuratorRepository implements ICuratorRepository{
             { new: true }
         ).lean()
         return curator
-    }
-    public updateEmail = async (curatorId: string, email: string) => {
-        const user = await this.curatorModel.findOneAndUpdate(
-            { curatorId },
-            { $set: {email} },
-            { new: true }
-        ).lean()
-        return user
     }
     public updatePassword = async (curatorId: string, newHashedPassword: string) => {
         await this.curatorModel.updateOne(

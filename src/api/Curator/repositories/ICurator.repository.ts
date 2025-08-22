@@ -4,12 +4,9 @@ export default interface ICuratorRepository {
     create: (data: EntityCurator) => Promise<EntityCurator>;
     
     findById: (curatorId: string) => Promise<EntityCurator | null>;
-    
-    findByEmail: (email: string) => Promise<EntityCurator | null>;
-    
+    findByName: (name: string, museumId: string) => Promise<EntityCurator | null>;
+        
     update: (curatorId: string, dataToUpdate: Partial<Omit<EntityCurator, 'curatorId' | 'email'>>) => Promise<EntityCurator | null>;
-
-    updateEmail: (curatorId: string, email: string) => Promise<EntityCurator | null>
 
     updatePassword: (curatorId: string, newHashedPassword: string) => Promise<void>;
     

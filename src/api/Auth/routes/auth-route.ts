@@ -1,34 +1,33 @@
 import {Router} from 'express'
 import { validateLoginMuseumFields } from '../../../middlewares/Validators/login.validator'
-import { MuseumRepository } from '../../Museum/repositories/implementation/museum.repository'
-import { MuseumModel } from '../../Museum/models/museum.schema'
 import { AuthMuseumService } from '../services/implementation/auth-museum.service'
 import { AuthMuseumController } from '../controllers/implementation/auth-museum.controller'
 import { UserRepository } from '../../User/repositories/implementation/user.repository'
 import { UserModel } from '../../User/models/user.schema'
-import { MuseumRegisterCases } from '../use-cases/implementation/museum-register'
-import { CuratorModel } from '../../Curator/models/curator.model'
-import { CuratorRepository } from '../../Curator/repositories/implementation/curator.repository'
-import { validateCompleteRegisterMuseumFields, validateFieldEmail, validateFieldPassword, validateRegisterMuseumFields } from '../../../middlewares/Validators/museum-register.validator'
-import { museumAuth, museumIsActiveAuth, museumIsEmailActiveAuth, museumIsEmailNotActiveAuth } from '../../../middlewares/auth.middleware'
+import { MuseumRegisterCases } from '../use-cases/implementation/uc-museum-register'
+import { validateCompleteRegisterMuseumFields, validateRegisterMuseumFields } from '../../../middlewares/Validators/museum-register.validator'
+import { curatorAuth, museumAuth, museumIsActiveAuth, museumIsEmailActiveAuth, museumIsEmailNotActiveAuth } from '../../../middlewares/auth.middleware'
 import { handleValidationErrors } from '../../../middlewares/error.middleware'
 import { RedisCacheService } from '../../Cache/services/implementation/redis-cache.service'
 import { CacheService } from '../../Cache/services/implementation/cache.service'
 import { EmailService } from '../../Email/service/implementation/email.service'
+import { AuthCuratorController } from '../controllers/implementation/auth-curator.controller'
+import { AuthCuratorService } from '../services/implementation/auth-curator.service'
+import { museumRepository } from '../../Museum/routes/museum.route'
+import { curatorRepository } from '../../Curator/routes/curator.routes'
+import { validateFieldEmail, validateFieldPassword } from '../../../middlewares/Validators/defaultsFields'
+import { validateLoginCurator, validateRegisterCurator } from '../../../middlewares/Validators/curator-auth-validator'
 
 
 const authRoutes = Router()
 
 //repositories
-const museumRepository = new MuseumRepository(MuseumModel)
 const userRepository = new UserRepository(UserModel)
-const curatorRepository = new CuratorRepository(CuratorModel)
 
 //use-cases
 const usecaseMuseumRegister = new MuseumRegisterCases(
     museumRepository,
     userRepository,
-    curatorRepository
 )
 
 //services
@@ -38,13 +37,16 @@ const radisCacheService = new RedisCacheService(
 )
 const emailService = new EmailService()
 
-const authService = new AuthMuseumService(
+const authMuseumService = new AuthMuseumService(
     museumRepository,
 
     usecaseMuseumRegister,
     
     radisCacheService,
     emailService
+)
+const authCuratorService = new AuthCuratorService(
+    curatorRepository
 )
 
 //controllers
@@ -53,7 +55,11 @@ const {
     getLoggedMuseum, completeLoginMuseum, changeEmailMuseum,
     completeChangeEmailMuseum, completeChangePasswordMuseum, completeVerifyEmailMuseum,
     changePasswordMuseum, verifyEmailMuseum, recoveryPasswordMuseum, recoveryPasswordChangeMuseum
-} = new AuthMuseumController(authService)
+} = new AuthMuseumController(authMuseumService)
+
+const {
+    curatorLogin, curatorRegister, getLoggedCurator
+} = new AuthCuratorController(authCuratorService)
 
 //museums routes
 authRoutes.get('/museum', museumAuth, getLoggedMuseum)
@@ -77,12 +83,13 @@ authRoutes.put('/museum/verify-email/complete', museumIsEmailNotActiveAuth, comp
 authRoutes.post('/museum/recovery-password', validateFieldEmail, handleValidationErrors, recoveryPasswordMuseum)
 authRoutes.put('/museum/recovery-password/change', validateFieldPassword, handleValidationErrors, recoveryPasswordChangeMuseum)
 
+//curators routes
+authRoutes.get('/curator', curatorAuth, getLoggedCurator)
+authRoutes.post('/curator/regiter', validateRegisterCurator, handleValidationErrors, curatorRegister)
+authRoutes.post('/curator/login', validateLoginCurator, handleValidationErrors, curatorLogin)
 
+//users routes 
+/* authRoutes.post('/users/register')
+authRoutes.post('/users/login') */
 
-/* 
-authRoutes.post('/user/login', validateLoginFields, loginUser) 
-
-authRoutes.post('/users')
-authRoutes.post('/curators/:museumId') //healer do museu
- */
 export {authRoutes}

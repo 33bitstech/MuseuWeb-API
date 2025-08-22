@@ -1,5 +1,5 @@
 import { MuseumRepository } from "../../../Museum/repositories/implementation/museum.repository";
-import IMuseumRegisterCaseContract from "../IMuseum-register";
+import IMuseumRegisterCaseContract from "../IUCMuseum-register";
 import { UserRepository } from "../../../User/repositories/implementation/user.repository";
 import { CuratorRepository } from "../../../Curator/repositories/implementation/curator.repository";
 import { cnpj as cnpjValidator } from "cpf-cnpj-validator";
@@ -8,7 +8,6 @@ export class MuseumRegisterCases implements IMuseumRegisterCaseContract{
     constructor(
         private readonly museumRepository: MuseumRepository,
         private readonly userRepository: UserRepository,
-        private readonly curatorRepository: CuratorRepository,
     ){}
 
     public verifyExistCnpj = async (cnpj: string) => {
@@ -21,14 +20,13 @@ export class MuseumRegisterCases implements IMuseumRegisterCaseContract{
     }
     public verifyExistEmail = async (email: string) => {
         const [
-            museum, curator, user
+            museum, user
         ] = await Promise.all([
             this.museumRepository.findByEmail(email),
-            this.curatorRepository.findByEmail(email),
             this.userRepository.findByEmail(email)
         ])
 
-        if ( museum || curator || user ) return true
+        if ( museum || user ) return true
         return false
     }
 }

@@ -4,17 +4,14 @@ import { compareStringToHash, createHash } from "../../../../utils/bcript";
 import HttpStatus from "../../../../utils/httpStatus";
 import { signToken } from "../../../../utils/jwt";
 import { MuseumRepository } from "../../../Museum/repositories/implementation/museum.repository";
-import { UserRepository } from "../../../User/repositories/implementation/user.repository";
 import IAuthMuseumServiceContract  from "../IAuth-museum.service";
-import { MuseumRegisterCases } from "../../use-cases/implementation/museum-register";
+import { MuseumRegisterCases } from "../../use-cases/implementation/uc-museum-register";
 import MuseumPayloadToken from "../../interfaces/museum-payload-token";
 import { DTOMuseumCompleteRegister, MuseumDatasArray, MuseumProfileData, PublicMuseumAuthenticated } from "../../../Museum/DTOs/DTOMuseum";
 import pick from "../../../../utils/pick";
 import { EntityMuseum } from "../../../Museum/entities/museum";
 import { RedisCacheService } from "../../../Cache/services/implementation/redis-cache.service";
-import generateOTP, { generateTempToken } from "../../../../utils/generateOtp";
 import { EmailService } from "../../../Email/service/implementation/email.service";
-import { TOtpAction, TTempTokenAction } from "../../../../interfaces/otp";
 
 export class AuthMuseumService implements IAuthMuseumServiceContract {
     constructor(
@@ -161,7 +158,7 @@ export class AuthMuseumService implements IAuthMuseumServiceContract {
         await this.museumRepository.updatePassword(museum?.museumId!, passwordHashed as string)
     }
 
-
+    
     public museumAuthenticated = async (museumId: string)=>{
         const museum = await this.museumRepository.findById(museumId) as Partial<EntityMuseum>
         
@@ -263,5 +260,4 @@ export class AuthMuseumService implements IAuthMuseumServiceContract {
 
         return this.createMuseumToken(museumFromDatabase as EntityMuseum)
     }
-    
 }

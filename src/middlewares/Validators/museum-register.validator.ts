@@ -1,16 +1,6 @@
 import { body } from "express-validator";
 import { accessibilityFeatureTypes, dayTypes, museumTypes, ticketTypes } from "./helper/museumArrays";
-
-export const validateFieldEmail = [
-    body("email")
-        .notEmpty().withMessage('O email não pode estar vazio')
-        .trim()
-        .isEmail().withMessage('Insira um email válido'),
-]
-export const validateFieldPassword = [
-    body('password')
-        .isLength({ min: 6 }).withMessage('Senha muito curta, o minimo são 6 caracteres')
-]
+import { validateFieldEmail, validateFieldPassword } from "./defaultsFields";
 
 export const validateRegisterMuseumFields = [
     body("cnpj")
