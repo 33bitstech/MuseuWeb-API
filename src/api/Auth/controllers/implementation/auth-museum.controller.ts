@@ -1,15 +1,13 @@
 
 import { Request, Response, NextFunction } from 'express';
-import IAuthControllerContract from '../IAuth.controller'
+import IAuthControllerContract from '../IAuth-museum.controller'
 import HttpStatus from '../../../../utils/httpStatus';
-import { AuthService } from '../../services/implementation/auth.service';
-import { validationResult } from 'express-validator';
-import { EntityMuseum } from '../../../Museum/entities/museum';
+import { AuthMuseumService } from '../../services/implementation/auth-museum.service';
 import { DTOMuseumCompleteRegister } from '../../../Museum/DTOs/DTOMuseum';
 
-export class AuthController implements IAuthControllerContract {
+export class AuthMuseumController implements IAuthControllerContract {
     constructor(
-        private authService: AuthService
+        private authService: AuthMuseumService
     ){}
 
     public loginMuseum = async (req: Request, res: Response, next: NextFunction) => {
@@ -166,43 +164,4 @@ export class AuthController implements IAuthControllerContract {
         }
     }
     
-
-
-    public loginUser = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-
-            const {email, password} = req.body
-            const token = await this.authService.userLogin(email, password)
-            res.status(HttpStatus.ACCEPTED.code).send({token})
-        } catch (err) {
-            next(err)
-        }
-    }
-
-    public loginCurator = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-
-            const {email, password} = req.body
-            const token = await this.authService.userLogin(email, password)
-            res.status(HttpStatus.ACCEPTED.code).send({token})
-        } catch (err) {
-            next(err)
-        }
-    }
-
-    public registerCurator = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-
-        } catch (err) {
-            next(err)
-        }
-    }
-
-    public registerUser = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-
-        } catch (err) {
-            next(err)
-        }
-    }
 }

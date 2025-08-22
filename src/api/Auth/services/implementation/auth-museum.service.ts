@@ -5,21 +5,20 @@ import HttpStatus from "../../../../utils/httpStatus";
 import { signToken } from "../../../../utils/jwt";
 import { MuseumRepository } from "../../../Museum/repositories/implementation/museum.repository";
 import { UserRepository } from "../../../User/repositories/implementation/user.repository";
-import IAuthServiceContract  from "../IAuth.service";
+import IAuthMuseumServiceContract  from "../IAuth-museum.service";
 import { MuseumRegisterCases } from "../../use-cases/implementation/museum-register";
 import MuseumPayloadToken from "../../interfaces/museum-payload-token";
 import { DTOMuseumCompleteRegister, MuseumDatasArray, MuseumProfileData, PublicMuseumAuthenticated } from "../../../Museum/DTOs/DTOMuseum";
 import pick from "../../../../utils/pick";
 import { EntityMuseum } from "../../../Museum/entities/museum";
-import { RedisCacheService } from "../../../Cache/services/implementation/cache.service";
+import { RedisCacheService } from "../../../Cache/services/implementation/redis-cache.service";
 import generateOTP, { generateTempToken } from "../../../../utils/generateOtp";
 import { EmailService } from "../../../Email/service/implementation/email.service";
 import { TOtpAction, TTempTokenAction } from "../../../../interfaces/otp";
 
-export class AuthService implements IAuthServiceContract {
+export class AuthMuseumService implements IAuthMuseumServiceContract {
     constructor(
         private readonly museumRepository: MuseumRepository,
-        private readonly userRepository: UserRepository,
 
         private readonly useCaseMuseumRegister: MuseumRegisterCases,
 
@@ -41,66 +40,13 @@ export class AuthService implements IAuthServiceContract {
             iat
         } as MuseumPayloadToken, '7d') as string
     }
-    private verifyOTP = async (action: TOtpAction, id: string, otp: string)=>{
-        const otpKey = `otp:${action}:${id}`
-        const storedOtp = await this.cacheService.get(otpKey)
-
-        if ( !storedOtp ) throw new ErrorsGlobal('Codigo inválido', HttpStatus.BAD_REQUEST.code)
-
-        if ( storedOtp === otp ) return await this.cacheService.delete(otpKey)
-
-        const otpObject = await JSON.parse(storedOtp)
-        if ( otpObject.otp == otp ) {
-            await this.cacheService.delete(otpKey)
-            return otpObject.value
-        }
-
-        throw new ErrorsGlobal('Codigo inválido', HttpStatus.BAD_REQUEST.code)
-    }
-    private createOTP = async (action: TOtpAction, id: string, otpValue?: string)=>{
-        const generatedOtp = generateOTP()
-
-        const otp = otpValue 
-            ? {
-                otp:generatedOtp, 
-                value: otpValue
-            }
-            : generatedOtp
-
-        const otpKey = `otp:${action}:${id}`
-        const otpExp = 1200 // 20 minutos
-        const saveOtp = otpValue ? JSON.stringify(otp) : otp as string
-        await this.cacheService.set(otpKey, saveOtp, otpExp)
-        return otp
-    }
-    private createTempToken = async(action: TTempTokenAction, id:string)=>{
-        const token = generateTempToken()
-        const key = `token:${action}:${token}`
-        const expirationInSeconds = 3600 // 1hora
-
-        await this.cacheService.set(key, id, expirationInSeconds)
-
-        return token
-    }
-    private verifyTempToken = async(action: TTempTokenAction, token:string)=>{
-        const key = `token:${action}:${token}`
-        const storedId = await this.cacheService.get(key)
-
-        if ( !storedId ) throw new ErrorsGlobal('Token inválido', HttpStatus.BAD_REQUEST.code)
-
-        await this.cacheService.delete(key)
-
-        return storedId
-    }
-
-
 
     public updateMuseumEmail = async (museumId:string, newEmail:string)=>{
         const isEmailInDatabase = await this.useCaseMuseumRegister.verifyExistEmail(newEmail)
         if ( isEmailInDatabase ) throw new ErrorsGlobal('Esse email ja foi cadastrado no sistema', HttpStatus.BAD_REQUEST.code)
 
         const [ otpObject, museumFromDatabase ] = await Promise.all([
-            this.createOTP('email-change', museumId, newEmail),
+            this.cacheService.createOTP('email-change', museumId, newEmail),
             this.museumRepository.findById(museumId)
         ])
 
@@ -119,7 +65,7 @@ export class AuthService implements IAuthServiceContract {
     public completeUpdateEmailMuseum = async (museumId: string, otp: string) =>{
         if ( !museumId ) throw new ErrorsGlobal('Envie o id do museu', HttpStatus.BAD_REQUEST.code)
 
-        const newEmail = await this.verifyOTP('email-change',museumId, otp)
+        const newEmail = await this.cacheService.verifyOTP('email-change',museumId, otp)
         if ( !newEmail ) throw new ErrorsGlobal('o novo email foi perdido no espaço tempo', HttpStatus.NOT_FOUND.code)
 
         await this.museumRepository.updateEmail(museumId, newEmail)
@@ -132,7 +78,7 @@ export class AuthService implements IAuthServiceContract {
         const passwordHashed = await createHash(15, newPassword) as string
 
         const [ otpObject, museumFromDatabase ] = await Promise.all([
-            this.createOTP('password-reset', museumId, passwordHashed),
+            this.cacheService.createOTP('password-reset', museumId, passwordHashed),
             this.museumRepository.findById(museumId)
         ])
 
@@ -151,13 +97,13 @@ export class AuthService implements IAuthServiceContract {
     public completeUpdatePasswordMuseum = async (museumId: string, otp: string) =>{
         if ( !museumId ) throw new ErrorsGlobal('Envie o id do museu', HttpStatus.BAD_REQUEST.code)
 
-        const newPassword = await this.verifyOTP('password-reset',museumId, otp)
+        const newPassword = await this.cacheService.verifyOTP('password-reset',museumId, otp)
         if ( !newPassword ) throw new ErrorsGlobal('a nova senha foi perdida no espaço tempo', HttpStatus.NOT_FOUND.code)
 
         await this.museumRepository.updatePassword(museumId, newPassword)
     }
     public verifyMuseumEmail = async (museum:EntityMuseum)=>{
-        const tempToken = await this.createTempToken('email-verify', museum.museumId)
+        const tempToken = await this.cacheService.createTempToken('email-verify', museum.museumId)
 
         const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${tempToken}`
 
@@ -176,7 +122,7 @@ export class AuthService implements IAuthServiceContract {
     public completeVerifyMuseumEmail = async (token: string)=>{
         if ( !token ) throw new ErrorsGlobal('Envie um token valido', HttpStatus.BAD_REQUEST.code)
 
-        const museumId = await this.verifyTempToken('email-verify', token)
+        const museumId = await this.cacheService.verifyTempToken('email-verify', token)
 
         await this.museumRepository.updateEmailVerified(museumId, true)
 
@@ -186,7 +132,7 @@ export class AuthService implements IAuthServiceContract {
         if ( !isAlreadyInDatabase ) throw new ErrorsGlobal('Email não cadastrado', HttpStatus.BAD_REQUEST.code)
 
         const [ tempToken, museum ] = await Promise.all([
-            this.createTempToken('password-recovery', email),
+            this.cacheService.createTempToken('password-recovery', email),
             this.museumRepository.findByEmail(email)
         ])
 
@@ -206,7 +152,7 @@ export class AuthService implements IAuthServiceContract {
         if ( !token ) throw new ErrorsGlobal('Envie um token valido', HttpStatus.BAD_REQUEST.code)
 
         const [ museumEmail, passwordHashed ] = await Promise.all([
-            this.verifyTempToken('password-recovery', token),
+            this.cacheService.verifyTempToken('password-recovery', token),
             createHash(15, password)
         ])
 
@@ -288,7 +234,7 @@ export class AuthService implements IAuthServiceContract {
         if ( !isPasswordCorrect ) throw new ErrorsGlobal('Email/Cnpj ou senha incorretos', HttpStatus.FORBIDDEN.code)
 
         if ( museumFromDatabase.verifiedEmail ){
-            const otp = await this.createOTP('login', museumFromDatabase.museumId)
+            const otp = await this.cacheService.createOTP('login', museumFromDatabase.museumId)
     
             await this.emailService.sendEmail(
                 'MuseuWeb <museuweb33@gmail.com>', 
@@ -311,39 +257,11 @@ export class AuthService implements IAuthServiceContract {
 
         if ( !museumId ) throw new ErrorsGlobal('Envie o id do museu', HttpStatus.BAD_REQUEST.code)
 
-        await this.verifyOTP('login',museumId, otp)
+        await this.cacheService.verifyOTP('login',museumId, otp)
 
         const museumFromDatabase = await this.museumRepository.findById(museumId)
 
         return this.createMuseumToken(museumFromDatabase as EntityMuseum)
     }
-    public userLogin = async (email: string, password: string) => {
-        const userFromDatabase = await this.userRepository.findByEmail(email)
-
-        if ( !userFromDatabase ) throw new ErrorsGlobal('Email não encontrado', HttpStatus.FORBIDDEN.code, 'Esse email não foi cadastrado no nosso sistema')
-
-        if (!userFromDatabase.password){
-            return await signToken({
-                userId: userFromDatabase.userId,
-                email: userFromDatabase.email,
-                name: userFromDatabase.name,
-                profileImg: userFromDatabase.profileImg,
-                favItens: userFromDatabase.favItens,
-                favMuseums: userFromDatabase.favMuseums,
-            }, '7d') as string
-        }
-
-        const isPasswordCorrect = await compareStringToHash(password, userFromDatabase.password)
-
-        if ( !isPasswordCorrect ) throw new ErrorsGlobal('Senha incorreta', HttpStatus.FORBIDDEN.code, 'Esse senha que você inseriu não coincide com a salva no sistema')
-
-        return await signToken({
-            userId: userFromDatabase.userId,
-            email: userFromDatabase.email,
-            name: userFromDatabase.name,
-            profileImg: userFromDatabase.profileImg,
-            favItens: userFromDatabase.favItens,
-            favMuseums: userFromDatabase.favMuseums,
-        }, '7d') as string
-    }
+    
 }

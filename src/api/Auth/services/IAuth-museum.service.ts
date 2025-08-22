@@ -1,7 +1,7 @@
 import { DTOMuseumCompleteRegister, PublicMuseumAuthenticated } from "../../Museum/DTOs/DTOMuseum";
 import { EntityMuseum } from "../../Museum/entities/museum";
 
-export default interface IAuthServiceContract {
+export default interface IAuthMuseumServiceContract {
     museumRegister: ({ cnpj, email, password }: { email: string; password: string; cnpj: string; }) => Promise<string>;
     completeMuseumRegister: (museumdId: string, museumObject: Partial<DTOMuseumCompleteRegister>) => Promise<string>;
     museumLogin: (identifier: string, password: string) => Promise<{ message: string; museumId?: string; token?: string; }>;
@@ -16,8 +16,6 @@ export default interface IAuthServiceContract {
 
     updateMuseumPassword: (museumId: string, newPassword: string) => Promise<{ message: string; museumId: string; }>;
     completeUpdatePasswordMuseum: (museumId: string, otp: string) => Promise<void>;
-
-    userLogin: (email: string, password: string) => Promise<string>;
 
     recoveryPasswordMuseum: (email:string)=> Promise<void>
     recoveryPasswordChangeMuseum: (token:string, newPassword: string)=> Promise<void>

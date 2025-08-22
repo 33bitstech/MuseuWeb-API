@@ -2,8 +2,8 @@ import {Router} from 'express'
 import { validateLoginMuseumFields } from '../../../middlewares/Validators/login.validator'
 import { MuseumRepository } from '../../Museum/repositories/implementation/museum.repository'
 import { MuseumModel } from '../../Museum/models/museum.schema'
-import { AuthService } from '../services/implementation/auth.service'
-import { AuthController } from '../controllers/implementation/auth.controller'
+import { AuthMuseumService } from '../services/implementation/auth-museum.service'
+import { AuthMuseumController } from '../controllers/implementation/auth-museum.controller'
 import { UserRepository } from '../../User/repositories/implementation/user.repository'
 import { UserModel } from '../../User/models/user.schema'
 import { MuseumRegisterCases } from '../use-cases/implementation/museum-register'
@@ -12,7 +12,8 @@ import { CuratorRepository } from '../../Curator/repositories/implementation/cur
 import { validateCompleteRegisterMuseumFields, validateFieldEmail, validateFieldPassword, validateRegisterMuseumFields } from '../../../middlewares/Validators/museum-register.validator'
 import { museumAuth, museumIsActiveAuth, museumIsEmailActiveAuth, museumIsEmailNotActiveAuth } from '../../../middlewares/auth.middleware'
 import { handleValidationErrors } from '../../../middlewares/error.middleware'
-import { RedisCacheService } from '../../Cache/services/implementation/cache.service'
+import { RedisCacheService } from '../../Cache/services/implementation/redis-cache.service'
+import { CacheService } from '../../Cache/services/implementation/cache.service'
 import { EmailService } from '../../Email/service/implementation/email.service'
 
 
@@ -31,14 +32,17 @@ const usecaseMuseumRegister = new MuseumRegisterCases(
 )
 
 //services
-const radisCacheService = new RedisCacheService()
+const cacheService = new CacheService()
+const radisCacheService = new RedisCacheService(
+    cacheService
+)
 const emailService = new EmailService()
 
-const authService = new AuthService(
+const authService = new AuthMuseumService(
     museumRepository,
-    userRepository,
 
     usecaseMuseumRegister,
+    
     radisCacheService,
     emailService
 )
@@ -49,7 +53,7 @@ const {
     getLoggedMuseum, completeLoginMuseum, changeEmailMuseum,
     completeChangeEmailMuseum, completeChangePasswordMuseum, completeVerifyEmailMuseum,
     changePasswordMuseum, verifyEmailMuseum, recoveryPasswordMuseum, recoveryPasswordChangeMuseum
-} = new AuthController(authService)
+} = new AuthMuseumController(authService)
 
 //museums routes
 authRoutes.get('/museum', museumAuth, getLoggedMuseum)

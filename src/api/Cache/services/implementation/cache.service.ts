@@ -1,7 +1,7 @@
-import { createClient, RedisClientType } from 'redis';
+import { createClient } from 'redis';
 import { ICacheServiceContract } from '../ICache.service';
 
-export class RedisCacheService implements ICacheServiceContract {
+export class CacheService implements ICacheServiceContract {
     private isConnected = false;
 
     constructor(
@@ -36,4 +36,5 @@ export class RedisCacheService implements ICacheServiceContract {
         await this.connect();
         await this.client.del(key);
     }
+        
 }

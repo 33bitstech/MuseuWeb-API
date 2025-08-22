@@ -1,16 +1,11 @@
 import { NextFunction, Request, Response } from "express"
 
-export default interface IAuthControllerContract {
+export default interface IAuthMuseumControllerContract {
     loginMuseum: (req:Request, res: Response, next: NextFunction) => Promise<void>
     completeLoginMuseum: (req:Request, res: Response, next: NextFunction) => Promise<void>
-
-    loginUser: (req:Request, res: Response, next: NextFunction) => Promise<void>
-    loginCurator: (req:Request, res: Response, next: NextFunction) => Promise<void>
     
     registerMuseum: (req:Request, res: Response, next: NextFunction) => Promise<void>
     completeRegisterMuseum: (req:Request, res: Response, next: NextFunction) => Promise<void>
-    registerUser: (req:Request, res: Response, next: NextFunction) => Promise<void>
-    registerCurator: (req:Request, res: Response, next: NextFunction) => Promise<void>
 
     getLoggedMuseum: (req:Request, res: Response, next: NextFunction) => Promise<void>
 
