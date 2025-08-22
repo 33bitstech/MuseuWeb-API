@@ -6,7 +6,7 @@ import { UserRepository } from '../../User/repositories/implementation/user.repo
 import { UserModel } from '../../User/models/user.schema'
 import { MuseumRegisterCases } from '../use-cases/implementation/uc-museum-register'
 import { validateCompleteRegisterMuseumFields, validateRegisterMuseumFields } from '../../../middlewares/Validators/museum-register.validator'
-import { curatorAuth, museumAuth, museumIsActiveAuth, museumIsEmailActiveAuth, museumIsEmailNotActiveAuth } from '../../../middlewares/auth.middleware'
+import { curatorAuth, museumAuth, museumIsActiveAuth, museumIsEmailActiveAuth, museumIsEmailNotActiveAuth, userAuth } from '../../../middlewares/auth.middleware'
 import { handleValidationErrors } from '../../../middlewares/error.middleware'
 import { RedisCacheService } from '../../Cache/services/implementation/redis-cache.service'
 import { CacheService } from '../../Cache/services/implementation/cache.service'
@@ -17,12 +17,13 @@ import { museumRepository } from '../../Museum/routes/museum.route'
 import { curatorRepository } from '../../Curator/routes/curator.routes'
 import { validateFieldEmail, validateFieldPassword } from '../../../middlewares/Validators/defaultsFields'
 import { validateLoginCurator, validateRegisterCurator } from '../../../middlewares/Validators/curator-auth-validator'
+import { userRepository } from '../../User/routes/user.routes'
+import { AuthUserController } from '../controllers/implementation/auth-user.controller'
+import { AuthUserService } from '../services/implementation/auth-user.service'
+import { validateLoginUserFields, validateRegisterUserFields } from '../../../middlewares/Validators/user-auth-validate'
 
 
 const authRoutes = Router()
-
-//repositories
-const userRepository = new UserRepository(UserModel)
 
 //use-cases
 const usecaseMuseumRegister = new MuseumRegisterCases(
@@ -48,6 +49,10 @@ const authMuseumService = new AuthMuseumService(
 const authCuratorService = new AuthCuratorService(
     curatorRepository
 )
+const authUserService = new AuthUserService(
+    userRepository,
+    usecaseMuseumRegister
+)
 
 //controllers
 const {
@@ -60,6 +65,10 @@ const {
 const {
     curatorLogin, curatorRegister, getLoggedCurator
 } = new AuthCuratorController(authCuratorService)
+
+const {
+    getLoggedUser, userLogin, userRegister
+} = new AuthUserController(authUserService)
 
 //museums routes
 authRoutes.get('/museum', museumAuth, getLoggedMuseum)
@@ -88,8 +97,15 @@ authRoutes.get('/curator', curatorAuth, getLoggedCurator)
 authRoutes.post('/curator/regiter', validateRegisterCurator, handleValidationErrors, curatorRegister)
 authRoutes.post('/curator/login', validateLoginCurator, handleValidationErrors, curatorLogin)
 
+
 //users routes 
-/* authRoutes.post('/users/register')
-authRoutes.post('/users/login') */
+authRoutes.get('/user', userAuth, getLoggedUser)
+authRoutes.post('/user/regiter', validateRegisterUserFields, handleValidationErrors, userRegister)
+authRoutes.post('/user/login', validateLoginUserFields, handleValidationErrors, userLogin)
+
+
+/* authRoutes.get('/user/oauth/link')
+
+authRoutes.get('/user/oauthcallback') */
 
 export {authRoutes}

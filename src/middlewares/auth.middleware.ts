@@ -6,6 +6,8 @@ import { museumRepository } from "../api/Museum/routes/museum.route"
 import HttpStatus from "../utils/httpStatus"
 import CuratorPayloadToken from "../api/Auth/interfaces/curator-payload-token"
 import { curatorRepository } from "../api/Curator/routes/curator.routes"
+import { userRepository } from "../api/User/routes/user.routes"
+import UserPayloadToken from "../api/Auth/interfaces/user-payload-token"
 
 export async function manageAuthorization(req: Request) {
     const { authorization } = req.headers
@@ -95,6 +97,20 @@ export async function curatorAuth (req: Request, res: Response, next: NextFuncti
 
         next()
 
+    } catch (error: any) {
+        next(error)
+    }
+}
+export async function userAuth (req: Request, res: Response, next: NextFunction) {
+    try {
+        const tokendecoded = await manageAuthorization(req) as UserPayloadToken
+
+        const user = await userRepository.findById(tokendecoded.userId)
+
+        if (!user) throw new ErrorsGlobal('Ocorreu um erro ao acessar o usuario', 500)
+        if (user) req.user = user
+
+        next()
     } catch (error: any) {
         next(error)
     }

@@ -8,7 +8,7 @@ export interface EntityUser {
 
     isGoogleAuth: boolean
 
-    profileImg: string
+    profileImg?: string
 
     accountStatus:{
        isBanned: boolean,

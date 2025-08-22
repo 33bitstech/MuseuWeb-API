@@ -31,7 +31,6 @@ const userSchema = new Schema<EntityUser>({
     },
     profileImg: {
         type: String,
-        required: true
     },
     accountStatus: {
         isBanned: {
