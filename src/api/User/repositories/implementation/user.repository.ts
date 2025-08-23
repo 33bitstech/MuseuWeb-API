@@ -16,6 +16,10 @@ export class UserRepository implements IUserContract{
         const user = await this.userModel.findOne({userId}).lean()
         return user
     }
+    public findByGoogleId = async (googleId: string) => {
+        const user = await this.userModel.findOne({googleId}).lean()
+        return user
+    }
 
     public create = async (userObject: EntityUser) => {
         const user = await this.userModel.create(userObject)
@@ -36,6 +40,12 @@ export class UserRepository implements IUserContract{
             { new: true }
         ).lean()
         return user
+    }
+    public updateGoogleId = async (email: string, googleId: string) => {
+        await this.userModel.findOne(
+            { email },
+            { $set: { googleId } }
+        )
     }
     public updatePassword = async (userId: string, newHashedPassword: string) => {
         await this.userModel.updateOne(

@@ -16,7 +16,7 @@ export class AuthUserService implements IAuthUserServiceContract{
         private readonly useCaseMuseumRegister: MuseumRegisterCases
     ){}
 
-    private createUserToken = async (user: EntityUser) =>{
+    public createUserToken = async (user: EntityUser) =>{
         const iat = Math.floor(Date.now() / 1000)
 
         return await signToken({

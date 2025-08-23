@@ -49,6 +49,10 @@ const userSchema = new Schema<EntityUser>({
     favMuseums: {
         type: [String],
         default: []
+    },
+    googleId: { 
+        type: String,
+        index:true
     }
 }, {
     timestamps: true

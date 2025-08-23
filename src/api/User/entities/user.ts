@@ -5,7 +5,7 @@ export interface EntityUser {
     email: string
     name: string
     password?: string
-
+    googleId?: string
     isGoogleAuth: boolean
 
     profileImg?: string

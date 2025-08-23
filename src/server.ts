@@ -13,6 +13,8 @@ import { mongoDBConnection } from "./database/mongoose";
 
 import stripeConfig from "stripe";
 import { paymentRoutes, stripeWebhook } from "./api/Payments/routes/payment.route";
+import passport from "./config/passport.config";
+
 
 export const stripe = new stripeConfig(process.env.STRIPE_SECRET_KEY as string)
 
@@ -35,6 +37,8 @@ app.use(limiter)
 app.use(helmet())
 app.use(express.json())
 app.use(compression())
+
+app.use(passport.initialize())
 
 app.use('/payments', paymentRoutes)
 app.use('/auth', authRoutes)

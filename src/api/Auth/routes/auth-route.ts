@@ -21,6 +21,7 @@ import { userRepository } from '../../User/routes/user.routes'
 import { AuthUserController } from '../controllers/implementation/auth-user.controller'
 import { AuthUserService } from '../services/implementation/auth-user.service'
 import { validateLoginUserFields, validateRegisterUserFields } from '../../../middlewares/Validators/user-auth-validate'
+import passport from '../../../config/passport.config'
 
 
 const authRoutes = Router()
@@ -104,8 +105,12 @@ authRoutes.post('/user/regiter', validateRegisterUserFields, handleValidationErr
 authRoutes.post('/user/login', validateLoginUserFields, handleValidationErrors, userLogin)
 
 
-/* authRoutes.get('/user/oauth/link')
+authRoutes.get('/user/oauth/link', passport.authenticate('google', { scope: ['profile', 'email'], session: false }))
 
-authRoutes.get('/user/oauthcallback') */
+authRoutes.get(
+    '/user/oauthcallback', 
+    passport.authenticate('google', { failureRedirect: '/', session:false }),
+    
+)
 
 export {authRoutes}
